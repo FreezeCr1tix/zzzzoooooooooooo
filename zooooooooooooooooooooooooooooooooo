@@ -1,0 +1,81 @@
+import os
+import telebot
+TOKEN = '7482352712:AAHXOEuFwP8BhotoikHjY-VnqNxHMGF8Z7M'
+
+bot = telebot.TeleBot(TOKEN)
+QUIZ_DATA = {
+    "Какая у вас любимая еда?": {
+        "мясо": {"медведь": 5, "волк": 3, "лев": 4},
+        "фрукты": {"олень": 3, "слон": 3, "ёж": 5}
+    },
+    "Где бы вы хотели жить?": {
+        "в лесу": {"олень": 4, "волк": 4, "ёж": 3},
+        "в пустыне": {"лев": 5, "змея": 4, "скорпион": 4},
+        "в воде": {"дельфин": 5, "акула": 4, "черепаха": 4}
+    },
+    "Какая у вас любимая погода?": {
+        "солнечная": {"слон": 4, "лев": 5, "скорпион": 4},
+        "дождливая": {"змея": 5, "ёж": 4, "бегемот": 3},
+        "снежная": {"медведь": 5, "олень": 4, "сова": 4}
+    }
+}
+current_question_index = 0
+questions = list(QUIZ_DATA.keys())
+user_answers = {}
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(chat_id=message.chat.id, text="Привет! Давай узнаем, какое твое тотемное животное?")
+    ask_next_question(message)
+
+def ask_next_question(message):
+    global current_question_index
+    if current_question_index < len(questions):
+        current_question = questions[current_question_index]
+        bot.send_message(chat_id=message.chat.id, text=current_question)
+        current_question_index += 1
+    else:
+        current_question_index = 0
+        show_result(message)
+
+@bot.message_handler(func=lambda message: True)
+def handle_answer(message):
+    user_answer = message.text.lower()
+    current_question = questions[current_question_index - 1]
+    user_answers[current_question] = user_answer
+    ask_next_question(message)
+
+def show_result(message):
+    totemc_animal = None
+    for question, answer in user_answers.items():
+        answers = QUIZ_DATA[question]
+        if answer in answers:
+            animal_scores = answers[answer]
+            totemc_animal = max(animal_scores, key=animal_scores.get)
+            break
+
+    if totemc_animal:
+        result_message = f"Ваше тотемное животание - {totemc_animal}!"
+        bot.send_message(chat_id=message.chat.id, text=result_message)
+    else:
+        bot.send_message(chat_id=message.chat.id, text="Извините, не удалось определить ваше тотемное животное.")
+
+    show_adoption_info(message)
+def show_adoption_info(message):
+    adoption_info = """
+Программа опеки в Московском зоопарке - это возможность внести свой вклад в сохранение животных и их среды обитания.
+Став опекуном, вы получите:
+- Сертификат опекуна
+- Регулярные обновления о состоянии вашего подопечного
+- Возможность посещения зоопарка в особом порядке
+- Приглашение на специальные мероприятия
+
+Чтобы стать опекуном, свяжитесь с нами по адресу adoption@moscowzoo.ru
+    """
+    bot.send_message(chat_id=message.chat.id, text=adoption_info)
+
+def main():
+    bot.polling()
+
+if 0==0:
+    main()
